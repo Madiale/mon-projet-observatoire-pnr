@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Observatoire du territoire - PNR des Volcans d'Auvergne</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        /* Couleurs inspirées du site officiel */
+        :root {
+            --vert-principal: #66cbf0;
+            --vert-clair: #6b8e6e;
+            --brun-volcan: #808080;
+            --beige: #f5f0e6;
+            --blanc: #ffffff;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: var(--beige);
+            line-height: 1.6;
+        }
+        
+        header {
+            background-color: var(--blanc);
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header-container {
+            display: flex;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+        
+        .logo {
+            height: 80px;
+            margin-right: 20px;
+        }
+        
+        .header-text {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .header-text h1 {
+            color: var(--vert-principal);
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        
+        .header-text p {
+            color: var(--brun-volcan);
+            margin: 5px 0 0;
+            font-style: italic;
+        }
+        
+        nav {
+            background-color: var(--vert-principal);
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        
+        nav a {
+            color: var(--blanc);
+            text-decoration: none;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        nav a:hover {
+            background-color: var(--vert-clair);
+        }
+        
+        .hero {
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('img/volcans-hero.jpg');
+            background-size: cover;
+            background-position: center;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--blanc);
+            text-align: center;
+        }
+        
+        .hero-content {
+            max-width: 800px;
+            padding: 20px;
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+        
+        .hero-btn {
+            display: inline-block;
+            background-color: var(--vert-principal);
+            color: var(--blanc);
+            padding: 10px 25px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .hero-btn:hover {
+            background-color: var(--vert-clair);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+            background: var(--blanc);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: var(--vert-principal);
+            border-bottom: 3px solid var(--brun-volcan);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+        
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+        
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .card-content {
+            padding: 20px;
+        }
+        
+        .card h3 {
+            color: var(--vert-principal);
+            margin-top: 0;
+        }
+        
+        .card p {
+            color: #666;
+        }
+        
+        .card-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: var(--brun-volcan);
+            font-weight: bold;
+            text-decoration: none;
+        }
+        
+        .card-link:hover {
+            text-decoration: underline;
+        }
+        
+        .map-container {
+            height: 500px;
+            margin: 25px 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            background-color: #f0f0f0;
+        }
+        
+        #main-map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .dashboard-item {
+            background: var(--blanc);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid var(--vert-principal);
+        }
+        
+        .dashboard-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--brun-volcan);
+            margin: 10px 0;
+        }
+        
+        footer {
+            background-color: var(--vert-principal);
+            color: var(--blanc);
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+        
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .footer-links a {
+            color: var(--blanc);
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .logo {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <img src="https://static.wixstatic.com/media/df776b_cb8dbd70b3a44b6f80e87f94a950de7a~mv2.png/v1/fill/w_100,h_150,al_c,q_85,usm_1.20_1.00_0.01,enc_avif,quality_auto/logo-pnrva-bleu_edited.png" alt="Logo PNR Volcans d'Auvergne" class="logo">
+            <div class="header-text">
+                <h1>Observatoire du territoire</h1>
+                <p>Parc Naturel Régional des Volcans d'Auvergne</p>
+            </div>
+        </div>
+    </header>
+    
+    <nav>
+        <div class="nav-container">
+            <a href="#accueil">Accueil</a>
+            <a href="#geographie">Géographie</a>
+            <a href="#patrimoine-culturel">Patrimoine culturel</a>
+            <a href="#biodiversite">Biodiversité</a>
+            <a href="#amenagement">Aménagement</a>
+            <a href="#donnees">Données</a>
+        </div>
+    </nav>
+    
+    <section class="hero" style="background: url('https://cdn.laetis.fr/i/hautesterres/large/https://www.hautesterrestourisme.fr/uploads/2022/05/htt-bb-cirque-de-chamaliere-aout-2019-10-1.jpg') center/cover no-repeat;">
+    <div class="hero-content">
+        <h1>Observer, comprendre et préserver les Volcans d'Auvergne</h1>
+        <a href="#geographie" class="hero-btn">Explorer le territoire</a>
+    </div>
+	</section>
+    
+    <div class="container">
+        <!-- Page d'accueil -->
+        <section id="accueil" class="section">
+            <h2>Pourquoi un Observatoire du territoire ?</h2>
+            <p>L'Observatoire du territoire des Volcans d'Auvergne a pour mission de rassembler, analyser et diffuser les connaissances sur notre Parc Naturel Régional. Cet outil permet de mieux comprendre les dynamiques territoriales, d'éclairer les décisions et de partager notre riche patrimoine avec tous les publics.</p>
+            
+            <p>À travers des cartes interactives, des données actualisées et des analyses thématiques, découvrez les multiples facettes de ce territoire exceptionnel classé au patrimoine mondial de l'UNESCO.</p>
+            
+            <div class="card-container">
+                <div class="card">
+                    <img src="https://static.wixstatic.com/media/df776b_5eda902c74c94edcaeebf2e89ec49bb0~mv2.png/v1/fill/w_147,h_285,al_c,q_85,usm_1.20_1.00_0.01,enc_avif,quality_auto/5%20r%C3%A9gions%20naturelles.png" alt="Carte du territoire">
+                    <div class="card-content">
+                        <h3>Découvrir le territoire</h3>
+                        <p>Explorez les caractéristiques géographiques des Volcans d'Auvergne, des paysages volcaniques aux vallées glaciaires.</p>
+                        <a href="#geographie" class="card-link">En savoir plus →</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <img src="https://static.wixstatic.com/media/df776b_9c2d70c714624423857beebf84e74d03~mv2.jpg/v1/fill/w_484,h_322,q_75,enc_avif,quality_auto/df776b_9c2d70c714624423857beebf84e74d03~mv2.jpg" alt="Patrimoine culturel">
+                    <div class="card-content">
+                        <h3>Patrimoine culturel</h3>
+                        <p>Découvrez les richesses culturelles et paysagères du parc, de l'architecture vernaculaire aux traditions fromagères.</p>
+                        <a href="#patrimoine-culturel" class="card-link">En savoir plus →</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <img src="https://static.wixstatic.com/media/df776b_4bdd63c61bdc489c8d04366ee516983e~mv2.jpg/v1/fill/w_199,h_149,al_c,q_80,usm_1.20_1.00_0.01,enc_avif,quality_auto/L'Apollon%20arverne%20%C2%A9%20T-Leroy%20SMPNRVA.jpg" alt="Biodiversité">
+                    <div class="card-content">
+                        <h3>Biodiversité</h3>
+                        <p>Explorez la faune et la flore exceptionnelles des volcans, des espèces endémiques aux zones protégées.</p>
+                        <a href="#biodiversite" class="card-link">En savoir plus →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+				<!-- Section Géographie -->
+		<section id="geographie" class="section">
+			<h2>Géographie du territoire</h2>
+			<p>Le Parc Naturel Régional des Volcans d'Auvergne s'étend sur près de 400 000 hectares au cœur du Massif Central. Avec ses paysages volcaniques uniques, ses vastes forêts et ses hauts plateaux, ce territoire offre une diversité géographique exceptionnelle.</p>
+			
+			<div class="dashboard">
+				<div class="dashboard-item">
+					<h3>Superficie</h3>
+					<div class="dashboard-value">395 068 ha</div>
+					<p>Le plus grand PNR de France</p>
+				</div>
+				
+				<div class="dashboard-item">
+					<h3>Population</h3>
+					<div class="dashboard-value">90 000</div>
+					<p>Habitants (12 hab/km²)</p>
+				</div>
+				
+				<div class="dashboard-item">
+					<h3>Point culminant</h3>
+					<div class="dashboard-value">1 885 m</div>
+					<p>Puy de Sancy</p>
+				</div>
+				
+				<div class="dashboard-item">
+					<h3>Point bas</h3>
+					<div class="dashboard-value">400 m</div>
+					<p>Vallée de la Dordogne</p>
+				</div>
+				
+				<div class="dashboard-item">
+					<h3>Altitude moyenne</h3>
+					<div class="dashboard-value">1 100 m</div>
+					<p>Altitude médiane</p>
+				</div>
+				
+				<div class="dashboard-item">
+					<h3>Secteurs paysagers</h3>
+					<div class="dashboard-value">5</div>
+					<p>Unités distinctes</p>
+				</div>
+				<div class="dashboard-item">
+					<h3>Communes</h3>
+					<div class="dashboard-value">entre 147 et 153</div>
+					<p>nombres de communes</p>
+				</div>
+				
+				<div class="dashboard-item">
+					<h3>sources, ruisseaux, cascades, lacs et zones humides</h3>
+					<div class="dashboard-value">4800 km</div>
+					<p>Cours d'eau</p>
+				</div>
+			</div>
+			
+				
+			<div class="card-container">
+			<div class="card">
+				<!-- Image cliquable avec lien vers la Story Map -->
+				<a href="https://arcg.is/1LKPfW1" target="_blank" rel="noopener noreferrer">
+					<img src="https://static.wixstatic.com/media/df776b_9df9faa1d20f4fa594ff8f9d8c8046cf~mv2.jpg/v1/fill/w_1257,h_872,al_c,q_85,usm_1.20_1.00_0.01,enc_avif,quality_auto/df776b_9df9faa1d20f4fa594ff8f9d8c8046cf~mv2.jpg" alt="Carte du territoire">
+				</a>
+				<div class="card-content">
+					<h3>Story Map du Parc Naturel Régional des Volcans d'Auvergne</h3>
+					<p>▶ Découvrez le territoire du parc à travers ce récit cartographique.</p>
+					<!-- Lien textuel supplémentaire -->
+					<a href="https://storymaps.arcgis.com/stories/221b917c182b4d31b0305e4e3fdf2384" target="_blank" rel="noopener noreferrer" class="card-link">
+						Ouvrir la Story Map →
+					</a>
+				</div>
+			</div>
+			</div>
+			
+			<h3>Secteurs paysagers</h3>
+			<p>Le territoire du PNR des Volcans d'Auvergne se compose de cinq grands ensembles paysagers distincts :</p>
+			<ul>
+				<li><strong>Les Monts Dômes</strong> : Chaîne des Puys classée UNESCO avec ses 80 volcans alignés sur 45 km. Paysage emblématique façonné par des éruptions récentes (à l'échelle géologique).</li>
+				
+				<li><strong>Les Monts Dore</strong> : Massif volcanique le plus élevé dominé par le puy de Sancy (1 885 m), avec ses vallées glaciaires et ses stations thermales historiques.</li>
+				
+				<li><strong>Le Cézallier</strong> : Vaste plateau basaltique (1 500 km²) entre 1 000 et 1 500 m d'altitude, royaume des estives et des tourbières préservées.</li>
+				
+				<li><strong>L'Artense</strong> : Plateau granitique (400-1 000 m) aux paysages de douces collines, lacs mystérieux et villages de pierre volcanique.</li>
+				
+				<li><strong>L'Aubrac nord</strong> : Extrémité nord du plateau de l'Aubrac avec ses prairies d'altitude et ses burons traditionnels. Zone de transition entre volcanisme et causses.</li>
+			</ul>
+
+			<p class="source-note">Source : <a href="https://www.parcdesvolcans.fr/un-territoire-des-patrimoines" target="_blank">Site officiel du PNR des Volcans d'Auvergne</a> - Découpage paysager 2023</p>
+		</section>
+		<!-- Section Patrimoine culturel -->
+		<section id="patrimoine-culturel" class="section">
+			<h2>Patrimoine culturel et paysager</h2>
+			<p>Le PNR des Volcans d'Auvergne cultive une alliance unique entre <strong>patrimoine naturel</strong> et <strong>traditions vivantes</strong>. Des paysages volcaniques façonnés par l'érosion aux savoir-faire ancestraux, ce territoire raconte 2 000 ans d'histoire humaine en symbiose avec la terre.</p>
+			
+			<div style="width: 100%; height: 600px; margin: 20px 0; border: 1px solid #ddd;">
+				<iframe 
+					src="https://unistra.maps.arcgis.com/apps/instant/interactivelegend/index.html?appid=fc173462f2a549ba807f20575073a98e" 
+					width="100%" 
+					height="100%" 
+					frameborder="0" 
+					allowfullscreen
+					aria-label="Carte interactive du patrimoine culturel">
+				</iframe>
+			</div>
+			
+			<h3>Galerie photos</h3>
+			<div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;">
+				<div style="flex: 1 1 300px; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+					<img 
+						src="https://www.clermontauvergnevolcans.com/wp-content/uploads/external/3588455-1120x698.jpg" 
+						alt="Église romane" 
+						style="width: 100%; height: 200px; object-fit: cover;">
+					<div style="padding: 15px;">
+						<h4 style="margin: 0 0 10px 0;">Patrimoine religieux</h4>
+						<p style="margin: 0;">Églises romanes et art sacré</p>
+					</div>
+				</div>
+				
+				<div style="flex: 1 1 300px; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+					<img 
+						src="https://th.bing.com/th/id/OIP.Fb4ycIKWBQdHTO5xfqHWkgHaEA?rs=1&pid=ImgDetMain" 
+						alt="Ferme traditionnelle" 
+						style="width: 100%; height: 200px; object-fit: cover;">
+					<div style="padding: 15px;">
+						<h4 style="margin: 0 0 10px 0;">Architecture vernaculaire</h4>
+						<p style="margin: 0;">Fermes et burons traditionnels</p>
+					</div>
+				</div>
+				
+				<div style="flex: 1 1 300px; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+					<img 
+						src="https://tse4.mm.bing.net/th/id/OIP.NO6PHbQHtG_Q8aIBge1C4AHaD4?rs=1&pid=ImgDetMain" 
+						alt="Paysage volcanique" 
+						style="width: 100%; height: 200px; object-fit: cover;">
+					<div style="padding: 15px;">
+						<h4 style="margin: 0 0 10px 0;">Paysages emblématiques</h4>
+						<p style="margin: 0;">Volcans, lacs et vallées</p>
+					</div>
+				</div>
+			</div>
+		</section>
+        
+        <!-- Section Biodiversité -->
+        <section id="biodiversite" class="section">
+            <h2>Patrimoine naturel et biodiversité</h2>
+            <p>Le PNR des Volcans d'Auvergne abrite une biodiversité exceptionnelle, avec de nombreuses espèces endémiques et des milieux naturels préservés.</p>
+            
+            <div style="width: 100%; height: 600px; margin: 20px 0; border: 1px solid #ddd;">
+				<iframe 
+					src="https://unistra.maps.arcgis.com/apps/instant/sidebar/index.html?appid=5249ff1baef547dcaf2dd7380a4c72cc" 
+					width="100%" 
+					height="100%" 
+					frameborder="0" 
+					allowfullscreen
+					aria-label="Carte interactive du patrimoine culturel">
+				</iframe>
+			</div>
+            
+            <h3>Statistiques</h3>
+            <div class="dashboard">
+                <div class="dashboard-item">
+                    <h3>Espèces protégées</h3>
+                    <div class="dashboard-value">142</div>
+                    <p>Flore et faune</p>
+                </div>
+                
+                <div class="dashboard-item">
+                    <h3>Réserves naturelles</h3>
+                    <div class="dashboard-value">6</div>
+                    <p>Dont 4 nationales</p>
+                </div>
+                
+                <div class="dashboard-item">
+                    <h3>Zones Natura 2000</h3>
+                    <div class="dashboard-value">15</div>
+                    <p>sites identifiés, dont 8 gérés par le Parc depuis 20 ans et 3 nouveaux depuis Janvier 2024</p>
+                </div>
+				
+				
+            </div>
+            
+            <h3>Espèces emblématiques</h3>
+            <div class="card-container">
+                <div class="card">
+                    <img src="https://static.wixstatic.com/media/df776b_a4efae36a9ef4664bbbf095731879c3f~mv2.jpg/v1/fill/w_185,h_242,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/df776b_a4efae36a9ef4664bbbf095731879c3f~mv2.jpg" alt="Mouflon">
+                    <div class="card-content">
+                        <h4>Chouette de Tengmalm</h4>
+                        <p>En déclin, sa population en France est estimée entre 1 500 et 2 000 couples et elle bénéficie d’une protection au niveau européen</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <img src="https://static.wixstatic.com/media/df776b_4909b6da82214580940beb904af1f219~mv2.jpg/v1/fill/w_320,h_240,al_c,q_80,usm_1.20_1.00_0.01,enc_avif,quality_auto/df776b_4909b6da82214580940beb904af1f219~mv2.jpg" alt="Loup">
+                    <div class="card-content">
+                        <h4>L'Apollon arverne</h4>
+                        <p>l’Apollon est un papillon emblématique des montagnes, y compris sur la réserve naturelle nationale de Chastreix-Sancy qui accueille une sous espèce endémique d’Auvergne : l’Apollon arverne (Parnassius apollo arvernensis )</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <img src="https://th.bing.com/th/id/OIP.pIAYFNhBfeDR_QRUqQ-gmwAAAA?rs=1&pid=ImgDetMain" alt="Saxifrage">
+                    <div class="card-content">
+                        <h4>Saxifrage à longues feuilles</h4>
+                        <p>Plante endémique des rochers volcaniques</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Section Aménagement -->
+        <section id="amenagement" class="section">
+            <h2>Aménagement du territoire</h2>
+            <p>Entre préservation des paysages emblématiques et maintien des activités traditionnelles, l’aménagement du territoire dans le Parc naturel régional des Volcans d’Auvergne repose sur un équilibre subtil entre bâti rural et unités pastorales, façonnant un espace vivant et harmonieux.</p>
+            
+            <div style="width: 100%; height: 600px; margin: 20px 0; border: 1px solid #ddd;">
+				<iframe 
+					src="https://unistra.maps.arcgis.com/apps/instant/sidebar/index.html?appid=74928f322bef4c1a8b9cec0fcb7cfdca" 
+					width="100%" 
+					height="100%" 
+					frameborder="0" 
+					allowfullscreen
+					aria-label="Carte interactive du patrimoine culturel">
+				</iframe>
+			</div>
+            
+            <h3>Indicateurs clés</h3>
+            <div class="dashboard">
+                <div class="dashboard-item">
+                    <h3>Évolution démographique</h3>
+                    <div class="dashboard-value">+0.8%</div>
+                    <p>sur 10 ans</p>
+                </div>
+                
+                <div class="dashboard-item">
+                    <h3>Unités pastorales</h3>
+                    <div class="dashboard-value">21%</div>
+                    <p>du territoire</p>
+                </div>
+                
+                <div class="dashboard-item">
+                    <h3>Fréquentation touristique</h3>
+                    <div class="dashboard-value">2.1M</div>
+                    <p>visiteurs/an</p>
+                </div>
+            </div>
+            
+            <h3>Projets en cours</h3>
+            <ul>
+                <li>Labellisation RAMSAR des zones humides </li>
+				 <p>Un territoire de 36 communes, doté d'un réseau très riche en tourbières, ainsi que de plusieurs lacs naturels et plans d’eau d’intérêt, est candidat à la labellisation Ramsar. C'est le troisième plus vaste site candidat à la labellisation Ramsar français pour conforter la prise en compte des tourbières au plan international.</p>
+                <li>Contrat Vert et Bleu des Volcans d’Auvergne  </li>
+				 <p>Ce projet vise à renforcer les continuités écologiques de la trame forestière du territoire du PNRVA et de la trame agropastorale du plateau du Limon. Il est cofinancé par l’Union européenne via le fonds européen de développement régional.</p>
+                <li>Préservation de la trame noire</li>
+				 <p>En 2023, des formations ont débuté pour les élus, agents de collectivité, associations et éducateurs à l'environnement afin d'acquérir une culture commune sur la préservation de la trame noire, c'est-à-dire la réduction de la pollution lumineuse pour protéger la biodiversité nocturne .</p>
+                <li>Réaménagement de Montlosier</li>
+				 <p>Le site de Montlosier, siège du parc, fait l'objet d'un réaménagement pour améliorer l'accueil du public et valoriser le patrimoine naturel et culturel du parc.</p>
+            </ul>
+        </section>
+        
+        <!-- Section Données -->
+        <section id="donnees" class="section">
+            <h2>Données et ressources</h2>
+            <p>Accédez aux données complètes de l'Observatoire du territoire et découvrez nos sources.</p>
+            
+            <h3>Téléchargements</h3>
+            <div class="card-container">
+                <div class="card">
+                    <div class="card-content">
+                        <h4>Données communales</h4>
+                        <p>Informations sur les communes du Parcs</p>
+                        <a href="communes du Parcs.xlsx" class="card-link">Télécharger (Excel)</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <h4>le PNR en Bref</h4>
+                        <p>Présentation et résumé du PNR</p>
+                        <a href="Le-Parc-en-bref.pdf" class="card-link">Télécharger (PDF)</a>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-content">
+                        <h4>Sites animés ou gérés par le Syndicat mixte du Parc </h4>
+                        <p>Espèces recensées (2023)</p>
+                        <a href="APPB.csv" class="card-link">Télécharger (CSV)</a>
+                    </div>
+                </div>
+            </div>
+            
+            <h3>Sources</h3>
+            <ul>
+                <li>INSEE - Recensement de la population</li>
+                <li>IGN - Cartographie et données géographiques</li>
+                <li>OFB - Inventaire de la biodiversité</li>
+                <li>PNR des Volcans d'Auvergne - Études locales</li>
+            </ul>
+        </section>
+    </div>
+    
+    <footer>
+        <div class="footer-container">
+            <div class="footer-links">
+                <a href="https://www.decouvrir.parcdesvolcans.fr/" target="_blank">Site officiel du PNR</a>
+                <a href="0744186405>Contact</a>
+                <a href="https://www.observatoire-des-territoires.gouv.fr/" target="_blank">Observatoire national</a>
+            </div>
+            <p>Observatoire du territoire - Parc naturel régional des Volcans d'Auvergne</p>
+            <p>Contact : madialediop5@gmail.com</p>
+            <p>© 2025 - Tous droits réservés</p>
+        </div>
+    </footer>
+
+</body>
+</html>
